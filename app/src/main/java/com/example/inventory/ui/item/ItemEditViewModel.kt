@@ -35,27 +35,6 @@ class ItemEditViewModel(
     private val itemsRepository: ItemsRepository
 ) : ViewModel() {
 
-    init{
-        viewModelScope.launch{
-            itemUiState = itemsRepository.getItemStream(itemId)
-                .filterNotNull()
-                .first()
-                .toItemUiState(true)
-        }
-    }
-
-    fun updateUiState(itemDetails: ItemDetails) {
-        itemUiState =
-            ItemUiState(itemDetails = itemDetails, isEntryValid = validateInput(itemDetails))
-    }
-
-
-    suspend fun updateItem() {
-        if (validateInput(itemUiState.itemDetails)) {
-            itemsRepository.updateItem(itemUiState.itemDetails.toItem())
-        }
-    }
-
     /**
      * Holds current item ui state
      */
@@ -63,6 +42,33 @@ class ItemEditViewModel(
         private set
 
     private val itemId: Int = checkNotNull(savedStateHandle[ItemEditDestination.itemIdArg])
+
+    init {
+        viewModelScope.launch {
+            itemUiState = itemsRepository.getItemStream(itemId)
+                .filterNotNull()
+                .first()
+                .toItemUiState(true)
+        }
+    }
+
+    /**
+     * Update the item in the [ItemsRepository]'s data source
+     */
+    suspend fun updateItem() {
+        if (validateInput(itemUiState.itemDetails)) {
+            itemsRepository.updateItem(itemUiState.itemDetails.toItem())
+        }
+    }
+
+    /**
+     * Updates the [itemUiState] with the value provided in the argument. This method also triggers
+     * a validation for input values.
+     */
+    fun updateUiState(itemDetails: ItemDetails) {
+        itemUiState =
+            ItemUiState(itemDetails = itemDetails, isEntryValid = validateInput(itemDetails))
+    }
 
     private fun validateInput(uiState: ItemDetails = itemUiState.itemDetails): Boolean {
         return with(uiState) {
